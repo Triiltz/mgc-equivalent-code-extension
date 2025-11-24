@@ -132,6 +132,7 @@ class MGCEquivalentCode {
         </div>
         
         <div class="mgc-sidebar-content">
+          <div id="mgc-billing-info" class="mgc-billing-info" style="display: none;"></div>
           <div class="mgc-code-container">
             <pre><code id="mgc-code-output">// Carregando...</code></pre>
           </div>
@@ -755,26 +756,36 @@ class MGCEquivalentCode {
     console.log('[MGC Extension] Atualizando display do código');
 
     const codeElement = this.sidebar.querySelector('#mgc-code-output');
+    const billingElement = this.sidebar.querySelector('#mgc-billing-info');
     
     // Preparar dados para geração
     const data = { ...this.formData };
 
     // Gerar código baseado na tab ativa
-    let code = '';
+    let result = null;
     
     if (window.MGC_GENERATORS) {
       if (this.currentTab === 'cli') {
-        code = window.MGC_GENERATORS.generateCLI(data);
+        result = window.MGC_GENERATORS.generateCLI(data);
       } else if (this.currentTab === 'terraform') {
-        code = window.MGC_GENERATORS.generateTerraform(data);
+        result = window.MGC_GENERATORS.generateTerraform(data);
       }
     } else {
-      code = '// Erro: Geradores não carregados';
       console.error('[MGC Extension] MGC_GENERATORS não disponível');
+      codeElement.textContent = '// Erro: Geradores não carregados';
+      return;
     }
 
-    // Atualizar elemento
-    codeElement.textContent = code;
+    // Atualizar código
+    codeElement.textContent = result.code;
+    
+    // Exibir billing se existir
+    if (billingElement && result.billing) {
+      billingElement.textContent = result.billing;
+      billingElement.style.display = 'block';
+    } else if (billingElement) {
+      billingElement.style.display = 'none';
+    }
   }
 }
 

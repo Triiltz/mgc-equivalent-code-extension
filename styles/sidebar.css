@@ -172,6 +172,21 @@
   background-color: var(--mgc-surface);
 }
 
+/* Billing Info */
+.mgc-billing-info {
+  background: linear-gradient(135deg, #6B4FFF 0%, #8A71FF 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(107, 79, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Container do código */
 .mgc-code-container {
   background-color: white;

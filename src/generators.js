@@ -14,7 +14,7 @@
  * @param {Object} data.disk - Configuração de disco
  * @param {Object} data.connectivity - Preferências de rede
  * @param {boolean} data.gpuEnabled - Se GPU está habilitada
- * @returns {string} - Comando CLI formatado
+ * @returns {{code: string, billing: string|null}} - Objeto com comando CLI e billing info
  */
 function generateCLI(data = {}) {
   const {
@@ -40,7 +40,10 @@ function generateCLI(data = {}) {
   );
 
   if (!hasData) {
-    return '# Preencha o formulário para gerar o código CLI\n# Campos observados: nome, imagem, zona, tipo, disco, rede e GPU (opcional)';
+    return {
+      code: '# Preencha o formulário para gerar o código CLI\n# Campos observados: nome, imagem, zona, tipo, disco, rede e GPU (opcional)',
+      billing: null
+    };
   }
 
   const args = [];
@@ -87,43 +90,11 @@ function generateCLI(data = {}) {
     command += ' \\\n  ' + args.join(' \\\n  ');
   }
 
-  const comments = [
-    '# Comando MGC CLI para criar VM',
-    '# Documentação: https://docs.magalu.cloud/cli'
-  ];
-
-  if (memoryProfile?.label) {
-    comments.push(`# Perfil de memória: ${memoryProfile.label}`);
-  }
-
-  if (flavor?.sku || flavor?.vcpu || flavor?.ramGb) {
-    const specs = [
-      flavor?.sku,
-      flavor?.vcpu ? `${flavor.vcpu} vCPU` : null,
-      flavor?.ramGb ? `${flavor.ramGb} GB RAM` : null
-    ].filter(Boolean).join(' · ');
-    if (specs) {
-      comments.push(`# Flavor selecionado: ${specs}`);
-    }
-  }
-
-  if (flavor?.priceHour || flavor?.priceMonth) {
-    comments.push(`# Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}`);
-  }
-
-  if (disk?.label && !disk.sizeGb) {
-    comments.push(`# Disco: ${disk.label}`);
-  }
-
-  if (image?.displayName && image?.displayName !== imageValue) {
-    comments.push(`# Imagem exibida: ${image.displayName}${image?.version ? ` (${image.version})` : ''}`);
-  }
-
-  if (availabilityZone?.label && availabilityZone.label !== availabilityZone.value) {
-    comments.push(`# Zona exibida: ${availabilityZone.label}`);
-  }
-
-  return `${comments.join('\n')}\n\n${command}`;
+  return {
+    code: command,
+    billing: flavor?.priceHour || flavor?.priceMonth ? 
+      `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
+  };
 }
 
 /**
@@ -137,7 +108,7 @@ function generateCLI(data = {}) {
  * @param {Object} data.disk - Configuração de disco
  * @param {Object} data.connectivity - Preferências de rede
  * @param {boolean} data.gpuEnabled - Flag de GPU
- * @returns {string} - Código Terraform formatado
+ * @returns {{code: string, billing: string|null}} - Objeto com código Terraform e billing info
  */
 function generateTerraform(data = {}) {
   const {
@@ -163,7 +134,10 @@ function generateTerraform(data = {}) {
   );
 
   if (!hasData) {
-    return '# Preencha o formulário para gerar o código Terraform\n# Campos observados: nome, imagem, zona, flavor, disco, rede e GPU (opcional)';
+    return {
+      code: '# Preencha o formulário para gerar o código Terraform\n# Campos observados: nome, imagem, zona, flavor, disco, rede e GPU (opcional)',
+      billing: null
+    };
   }
 
   const resourceName = instanceName
@@ -171,12 +145,6 @@ function generateTerraform(data = {}) {
     : 'vm_instance';
 
   const terraform = [];
-  terraform.push('# Configuração Terraform para Magalu Cloud');
-  terraform.push('# Provider: https://registry.terraform.io/providers/magalucloud/mgc/latest');
-  if (memoryProfile?.label) {
-    terraform.push(`# Perfil selecionado no console: ${memoryProfile.label}`);
-  }
-  terraform.push('');
 
   terraform.push(`resource "mgc_virtual_machine" "${resourceName}" {`);
 
@@ -194,9 +162,6 @@ function generateTerraform(data = {}) {
 
   if (imageValue) {
     terraform.push(`  image            = "${imageValue}"`);
-    if (image?.displayName && image?.displayName !== imageValue) {
-      terraform.push(`  # UI: ${image.displayName}${image?.version ? ` (${image.version})` : ''}`);
-    }
   } else {
     terraform.push('  # image          = "selecione-uma-imagem"');
   }
@@ -227,12 +192,11 @@ function generateTerraform(data = {}) {
 
   terraform.push('}');
 
-  if (flavor?.priceHour || flavor?.priceMonth) {
-    terraform.push('');
-    terraform.push(`# Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}`);
-  }
-
-  return terraform.join('\n');
+  return {
+    code: terraform.join('\n'),
+    billing: flavor?.priceHour || flavor?.priceMonth ? 
+      `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
+  };
 }
 
 /**
