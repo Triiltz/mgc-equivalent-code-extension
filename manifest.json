@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "MGC Equivalent Code Generator",
+  "description": "Gera código CLI e Terraform equivalente a partir do console da Magalu Cloud",
+  "version": "1.0.0",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://console.magalu.cloud/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://console.magalu.cloud/*"],
+      "js": [
+        "src/mappings.js",
+        "src/generators.js",
+        "src/content.js"
+      ],
+      "css": ["styles/sidebar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.txt",
+    "48": "icons/icon48.txt",
+    "128": "icons/icon128.txt"
+  },
+  "action": {
+    "default_title": "MGC Equivalent Code"
+  }
+}

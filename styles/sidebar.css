@@ -1,0 +1,394 @@
+/**
+ * Estilos da Sidebar - Identidade Visual Magalu Cloud
+ * Cores baseadas na identidade MGC
+ */
+
+:root {
+  /* Cores Magalu Cloud */
+  --mgc-primary: #6B4FFF;
+  --mgc-primary-dark: #5639E6;
+  --mgc-primary-light: #8A71FF;
+  --mgc-secondary: #00D4FF;
+  --mgc-background: #FFFFFF;
+  --mgc-surface: #F8F9FA;
+  --mgc-border: #E5E7EB;
+  --mgc-text-primary: #1F2937;
+  --mgc-text-secondary: #6B7280;
+  --mgc-success: #10B981;
+  --mgc-error: #EF4444;
+  
+  /* Sombras */
+  --mgc-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --mgc-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --mgc-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+#mgc-equivalent-code-sidebar {
+  /* Posicionamento */
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 550px;
+  height: 100vh;
+  z-index: 999999;
+  
+  /* Layout */
+  display: flex;
+  flex-direction: row;
+  
+  /* Fundo branco MGC */
+  background-color: var(--mgc-background);
+  color: var(--mgc-text-primary);
+  
+  /* Sombra */
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  
+  /* Fonte */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  
+  /* Transição suave */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estado colapsado */
+#mgc-equivalent-code-sidebar.collapsed {
+  width: 60px;
+  background: transparent;
+  box-shadow: none;
+}
+
+#mgc-equivalent-code-sidebar.collapsed .mgc-sidebar-main {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Botão de toggle (minimizar/expandir) */
+.mgc-toggle-button {
+  position: absolute;
+  left: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 80px;
+  background: var(--mgc-primary);
+  color: white;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: -2px 2px 8px rgba(107, 79, 255, 0.3);
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.mgc-toggle-button:hover {
+  background: var(--mgc-primary-dark);
+  left: -42px;
+  box-shadow: -4px 4px 12px rgba(107, 79, 255, 0.4);
+}
+
+.mgc-toggle-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.mgc-toggle-icon {
+  transition: transform 0.3s ease;
+}
+
+/* Container principal */
+.mgc-sidebar-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease;
+}
+
+/* Header da sidebar */
+.mgc-sidebar-header {
+  padding: 24px;
+  border-bottom: 2px solid var(--mgc-border);
+  background: linear-gradient(135deg, var(--mgc-primary) 0%, var(--mgc-primary-dark) 100%);
+  color: white;
+}
+
+.mgc-brand {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.mgc-sidebar-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+/* Tabs */
+.mgc-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.mgc-tab {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.mgc-tab:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.mgc-tab.active {
+  background-color: white;
+  color: var(--mgc-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Conteúdo */
+.mgc-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: var(--mgc-surface);
+}
+
+/* Container do código */
+.mgc-code-container {
+  background-color: white;
+  border: 1px solid var(--mgc-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--mgc-shadow-sm);
+}
+
+.mgc-code-container pre {
+  margin: 0;
+  padding: 20px;
+  padding-right: 24px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 320px);
+}
+
+.mgc-code-container code {
+  display: block;
+  font-family: 'Consolas', 'Monaco', 'Courier New', 'SF Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--mgc-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Syntax highlighting - Ajustado para tema claro MGC */
+.mgc-code-container .comment {
+  color: #6B7280;
+  font-style: italic;
+}
+
+.mgc-code-container .keyword {
+  color: var(--mgc-primary);
+  font-weight: 600;
+}
+
+.mgc-code-container .string {
+  color: #059669;
+}
+
+.mgc-code-container .flag {
+  color: #0891B2;
+  font-weight: 500;
+}
+
+.mgc-code-container .property {
+  color: #7C3AED;
+}
+
+/* Scrollbar customizada - Estilo MGC */
+.mgc-sidebar-content::-webkit-scrollbar,
+.mgc-code-container pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.mgc-sidebar-content::-webkit-scrollbar-track,
+.mgc-code-container pre::-webkit-scrollbar-track {
+  background: var(--mgc-surface);
+  border-radius: 4px;
+}
+
+.mgc-sidebar-content::-webkit-scrollbar-thumb,
+.mgc-code-container pre::-webkit-scrollbar-thumb {
+  background: var(--mgc-border);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.mgc-sidebar-content::-webkit-scrollbar-thumb:hover,
+.mgc-code-container pre::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
+}
+
+/* Footer */
+.mgc-sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid var(--mgc-border);
+  background-color: white;
+  position: relative;
+}
+
+/* Botão copiar - Estilo MGC */
+.mgc-copy-button {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  background: linear-gradient(135deg, var(--mgc-primary) 0%, var(--mgc-primary-dark) 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(107, 79, 255, 0.25);
+}
+
+.mgc-copy-button:hover {
+  background: linear-gradient(135deg, var(--mgc-primary-dark) 0%, #4527CC 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(107, 79, 255, 0.35);
+}
+
+.mgc-copy-button:active {
+  transform: translateY(0);
+}
+
+/* Feedback de cópia */
+.mgc-copy-feedback {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mgc-success);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.mgc-copy-feedback.show {
+  opacity: 1;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+  #mgc-equivalent-code-sidebar {
+    width: 420px;
+  }
+}
+
+@media (max-width: 900px) {
+  #mgc-equivalent-code-sidebar {
+    width: 100%;
+    max-width: 380px;
+  }
+}
+
+/* Animação de entrada */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+#mgc-equivalent-code-sidebar {
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estados vazios */
+.mgc-code-container code:empty::before {
+  content: '// Carregando dados do formulário...';
+  color: var(--mgc-text-secondary);
+  font-style: italic;
+}
+
+/* Foco e acessibilidade */
+.mgc-tab:focus,
+.mgc-copy-button:focus,
+.mgc-toggle-button:focus {
+  outline: 3px solid var(--mgc-primary-light);
+  outline-offset: 2px;
+}
+
+/* Seleção de texto */
+.mgc-code-container code::selection {
+  background-color: rgba(107, 79, 255, 0.2);
+  color: var(--mgc-text-primary);
+}
+
+/* Loading state */
+.mgc-code-container.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Print - ocultar sidebar */
+@media print {
+  #mgc-equivalent-code-sidebar {
+    display: none !important;
+  }
+}
+
+/* Animações adicionais */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mgc-sidebar-main {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Efeito hover nos cards de código */
+.mgc-code-container:hover {
+  box-shadow: var(--mgc-shadow-md);
+  border-color: var(--mgc-primary-light);
+  transition: all 0.2s ease;
+}
