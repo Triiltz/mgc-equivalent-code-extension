@@ -167,9 +167,9 @@ function generateTerraform(data = {}) {
   }
 
   if (flavor?.value || flavor?.sku) {
-    terraform.push(`  flavor           = "${flavor.value || flavor.sku}"`);
+    terraform.push(`  machine_type           = "${flavor.value || flavor.sku}"`);
   } else {
-    terraform.push('  # flavor        = "selecione-um-flavor"');
+    terraform.push('  # machine_type        = "selecione-um-machine-type"');
   }
 
   if (disk?.sizeGb) {
@@ -179,9 +179,9 @@ function generateTerraform(data = {}) {
   }
 
   if (typeof connectivity?.publicIPv4 === 'boolean') {
-    terraform.push(`  public_ipv4      = ${connectivity.publicIPv4}`);
+    terraform.push(`  allocate_public_ipv4     = ${connectivity.publicIPv4}`);
   } else {
-    terraform.push('  # public_ipv4   = true');
+    terraform.push('  # allocate_public_ipv4   = true');
   }
 
   if (gpuEnabled) {
