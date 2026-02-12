@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MGC Equivalent Code Generator",
-  "description": "Gera código CLI e Terraform equivalente a partir do console da Magalu Cloud",
+  "description": "Generates equivalent CLI and Terraform code from the Magalu Cloud console",
   "version": "1.0.0",
   "permissions": [
     "activeTab"

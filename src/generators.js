@@ -64,7 +64,7 @@ function generateCLI(data = {}) {
 
   if (!hasData) {
     return {
-      code: '# Preencha o formulário para gerar o código CLI\n# Comando: mgc virtual-machine instances create',
+      code: '# Fill out the form to generate CLI code\n# Command: mgc virtual-machine instances create',
       billing: null
     };
   }
@@ -153,7 +153,7 @@ function generateTerraform(data = {}) {
 
   if (!hasData) {
     return {
-      code: '# Preencha o formulário para gerar o código Terraform\n# Resource: mgc_virtual_machine_instances',
+      code: '# Fill out the form to generate Terraform code\n# Resource: mgc_virtual_machine_instances',
       billing: null
     };
   }
@@ -171,7 +171,7 @@ function generateTerraform(data = {}) {
   if (instanceName) {
     lines.push(`  ${pad('name')} = "${instanceName}"`);
   } else {
-    lines.push(`  # ${pad('name')} = "nome-da-instancia"`);
+    lines.push(`  # ${pad('name')} = "instance-name"`);
   }
 
   // machine_type (required)
@@ -197,7 +197,7 @@ function generateTerraform(data = {}) {
   if (sshKeyName) {
     lines.push(`  ${pad('ssh_key_name')} = "${sshKeyName}"`);
   } else {
-    lines.push(`  # ${pad('ssh_key_name')} = "sua-chave-ssh"`);
+    lines.push(`  # ${pad('ssh_key_name')} = "your-ssh-key-name"`);
   }
 
   // allocate_public_ipv4
@@ -210,7 +210,7 @@ function generateTerraform(data = {}) {
   return {
     code: lines.join('\n'),
     billing: flavor?.priceHour || flavor?.priceMonth ?
-      `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
+      `Estimated costs: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
   };
 }
 

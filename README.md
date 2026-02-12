@@ -23,11 +23,11 @@ cd mgc-equivalent-code-extension
 
 ### Use
 
-1. Go to [Magalu Cloud Console](https://console.magalu.cloud) → **Virtual Machines** → **Criar instância**
+1. Go to [Magalu Cloud Console](https://console.magalu.cloud) → **Virtual Machines** → **Create instance (Criar instância)**
 2. A **`</> Equivalent Code`** button appears in the top-right corner
 3. Click it to open the sidebar — code updates as you fill the form
 4. Switch between **CLI** and **Terraform** tabs
-5. Click **Copiar Código** to copy to clipboard
+5. Click **Copy Code** to copy to clipboard
 
 ## Output Examples
 
@@ -74,4 +74,4 @@ Contributions are welcome. Please open an issue first to discuss what you'd like
 
 ---
 
-Built for [Magalu Cloud](https://magalu.cloud) as a university project at [UFSCar](https://www.ufscar.br/).
+Built for [Magalu Cloud](https://magalu.cloud).

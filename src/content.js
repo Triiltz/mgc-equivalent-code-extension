@@ -129,13 +129,13 @@ class MGCEquivalentCode {
         <div class="mgc-sidebar-content">
           <div id="mgc-billing-info" class="mgc-billing-info" style="display: none;"></div>
           <div class="mgc-code-container">
-            <pre><code id="mgc-code-output">// Carregando...</code></pre>
+            <pre><code id="mgc-code-output">// Loading...</code></pre>
           </div>
         </div>
         
         <div class="mgc-sidebar-footer">
           <button id="mgc-copy-btn" class="mgc-copy-button">
-            Copiar Código
+            Copy Code
           </button>
           <div id="mgc-copy-feedback" class="mgc-copy-feedback"></div>
         </div>

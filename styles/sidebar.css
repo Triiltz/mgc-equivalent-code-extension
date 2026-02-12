@@ -397,7 +397,7 @@
 
 /* Estados vazios */
 .mgc-code-container code:empty::before {
-  content: '// Carregando dados do formulário...';
+  content: '// Loading forms information...';
   color: var(--mgc-text-secondary);
   font-style: italic;
 }
