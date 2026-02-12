@@ -634,27 +634,49 @@ class MGCEquivalentCode {
    * @returns {string|null}
    */
   captureSSHKeyName() {
-    const section = this.findSectionByLabel('chave ssh');
-    if (!section) {
-      console.log('[MGC Extension] Seção SSH não encontrada');
-      return null;
-    }
-
-    // Tentar input com id="key_name" ou name contendo key
-    const keyNameInput = section.querySelector('input#key_name')
-      || section.querySelector('input[name*="key" i]');
-    
-    if (keyNameInput?.value) {
-      console.log('[MGC Extension] SSH key capturada:', keyNameInput.value);
+    // 1) Modo "Inserir chave nova": input#key_name (presente quando o radio "insert" está ativo)
+    const keyNameInput = document.querySelector('input#key_name');
+    if (keyNameInput?.value?.trim()) {
+      console.log('[MGC Extension] SSH key capturada (input#key_name):', keyNameInput.value);
       return keyNameInput.value.trim();
     }
 
-    // Tentar select/dropdown de chave SSH
-    const selectValue = section.querySelector('[class*="singleValue"]');
-    if (selectValue?.textContent?.trim()) {
-      const name = selectValue.textContent.trim();
-      console.log('[MGC Extension] SSH key capturada (select):', name);
-      return name;
+    // 2) Modo "Selecionar chave existente": encontrar o container da seção SSH inteira
+    //    O label "Chave SSH*" está dentro de um <div class="chakra-stack"> que é filho
+    //    do container da seção. Subimos na DOM até achar o container que também contém
+    //    o radiogroup (ou seja, a seção SSH completa).
+    const allLabels = Array.from(document.querySelectorAll('label'));
+    const sshLabel = allLabels.find(l => {
+      const text = this.normalizeText(l.textContent);
+      return text.includes('chave ssh');
+    });
+
+    if (sshLabel) {
+      // Subir na DOM até encontrar um container que contenha o radiogroup
+      let container = sshLabel.parentElement;
+      for (let i = 0; i < 6 && container; i++) {
+        if (container.querySelector('[role="radiogroup"]')) break;
+        container = container.parentElement;
+      }
+
+      if (container) {
+        // React-select com nome da chave existente selecionada
+        const selectValue = container.querySelector('[class*="singleValue"]');
+        if (selectValue?.textContent?.trim()) {
+          const name = selectValue.textContent.trim();
+          if (name !== 'Selecione' && name !== 'Selecionar' && name.length > 0) {
+            console.log('[MGC Extension] SSH key capturada (dropdown):', name);
+            return name;
+          }
+        }
+
+        // Fallback: native <select> dentro da seção SSH
+        const nativeSelect = container.querySelector('select');
+        if (nativeSelect?.value?.trim()) {
+          console.log('[MGC Extension] SSH key capturada (native select):', nativeSelect.value);
+          return nativeSelect.value.trim();
+        }
+      }
     }
 
     console.log('[MGC Extension] SSH key: nenhuma chave selecionada');
