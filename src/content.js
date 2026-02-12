@@ -15,12 +15,6 @@ class MGCEquivalentCode {
     console.log('[MGC Extension] URL:', window.location.href);
     console.log('[MGC Extension] DOM Ready:', document.readyState);
     
-    // TESTE: Injetar sempre após 2 segundos (remover depois de confirmar funcionamento)
-    setTimeout(() => {
-      console.log('[MGC Extension] Forçando injeção de teste...');
-      this.injectSidebar();
-    }, 2000);
-    
     this.init();
   }
 
@@ -132,6 +126,7 @@ class MGCEquivalentCode {
         </div>
         
         <div class="mgc-sidebar-content">
+          <div id="mgc-billing-info" class="mgc-billing-info" style="display: none;"></div>
           <div class="mgc-code-container">
             <pre><code id="mgc-code-output">// Carregando...</code></pre>
           </div>
@@ -262,7 +257,8 @@ class MGCEquivalentCode {
       disk: null,
       connectivity: null,
       gpuEnabled: false,
-      image: null
+      image: null,
+      sshKeyName: null
     };
   }
 
@@ -337,6 +333,7 @@ class MGCEquivalentCode {
     const connectivity = this.captureConnectivity();
     const gpuEnabled = this.captureGpuState();
     const image = this.captureSelectedImage();
+    const sshKeyName = this.captureSSHKeyName();
 
     const nextData = {
       instanceName,
@@ -346,7 +343,8 @@ class MGCEquivalentCode {
       disk,
       connectivity,
       gpuEnabled,
-      image
+      image,
+      sshKeyName
     };
 
     console.log('[MGC Extension] Dados capturados:', nextData);
@@ -468,22 +466,41 @@ class MGCEquivalentCode {
     const input = selectedCard?.querySelector('input[name="type"]') || 
       section.querySelector('input[name="type"]:checked');
     
-    const textContent = this.extractText(selectedCard);
-    
-    if (!textContent && !input?.value) {
+    if (!selectedCard && !input?.value) {
       console.log('[MGC Extension] Flavor: nenhum selecionado');
       return null;
     }
 
-    const details = this.parseFlavorDetails(textContent);
+    // Ler cada campo separadamente dos <p> do card para evitar concatenação
+    // Estrutura: <p>BV4-8-100</p> <p>4 vCPU</p> <p>8 GB RAM</p> <p>R$ .../hora</p> <p>R$ .../mês</p>
+    const paragraphs = selectedCard
+      ? Array.from(selectedCard.querySelectorAll('p')).map(p => p.textContent?.trim()).filter(Boolean)
+      : [];
+    
+    let sku = null, vcpu = null, ramGb = null, priceHour = null, priceMonth = null;
+
+    for (const text of paragraphs) {
+      if (!sku && /^[A-Z]{2}\d+-\d+-\d+$/i.test(text)) {
+        sku = text.toUpperCase();
+      } else if (!vcpu && /^\d{1,3}\s*vCPU$/i.test(text)) {
+        vcpu = Number(text.match(/\d+/)[0]);
+      } else if (!ramGb && /^\d{1,4}\s*GB/i.test(text)) {
+        ramGb = Number(text.match(/\d+/)[0]);
+      } else if (!priceHour && /R\$.*\/\s*hora/i.test(text)) {
+        priceHour = text;
+      } else if (!priceMonth && /R\$.*\/\s*m[eê]s/i.test(text)) {
+        priceMonth = text;
+      }
+    }
+
     const result = {
-      label: textContent,
-      value: input?.value || details.sku || null,
-      sku: details.sku,
-      vcpu: details.vcpu,
-      ramGb: details.ramGb,
-      priceHour: details.priceHour,
-      priceMonth: details.priceMonth
+      label: paragraphs.join(' | '),
+      value: input?.value || sku || null,
+      sku,
+      vcpu,
+      ramGb,
+      priceHour,
+      priceMonth
     };
     
     console.log('[MGC Extension] Flavor capturado:', result);
@@ -544,70 +561,126 @@ class MGCEquivalentCode {
    * @returns {object|null}
    */
   captureSelectedImage() {
-    // Abordagem 1: Buscar na seção específica
     const section = this.findSectionByLabel('escolha uma imagem');
-    let selectedCard = section?.querySelector('[data-checked="true"]');
+
+    // Abordagem 1 (mais confiável): encontrar o card selecionado e ler seu input[name="image"]
+    // Cada card de imagem tem seu próprio input hidden. Os não-selecionados têm value="".
+    // Precisamos pegar especificamente o do card com data-checked="true".
+    const selectedCard = section?.querySelector('[data-checked="true"]')
+      || section?.querySelector('label[data-checked]');
     
-    // Abordagem 2: Buscar globalmente se não encontrou na seção
-    if (!selectedCard) {
-      console.log('[MGC Extension] Imagem: tentando busca global por [data-checked="true"]');
-      selectedCard = document.querySelector('[data-checked="true"]');
-    }
+    if (selectedCard) {
+      // O input hidden com o providerName exato (ex: "cloud-ubuntu-24.04 LTS")
+      const hiddenInput = selectedCard.querySelector('input[name="image"]');
+      
+      if (hiddenInput?.value) {
+        const providerName = hiddenInput.value.trim();
+        console.log('[MGC Extension] Imagem via input[name=image]:', providerName);
 
-    if (!selectedCard) {
-      console.log('[MGC Extension] Imagem: nenhum card selecionado');
-      return null;
-    }
+        // Buscar metadata pelo providerName
+        if (window.MGC_MAPPINGS?.getImageMetadata) {
+          const metadata = window.MGC_MAPPINGS.getImageMetadata(providerName);
+          if (metadata) {
+            console.log('[MGC Extension] Imagem capturada (com metadata):', metadata.displayName);
+            return { ...metadata, sourceLabel: providerName, apiValue: metadata.name };
+          }
+        }
 
-    // Extrair família e versão da imagem
-    const family = selectedCard.querySelector('.css-3inudv')?.textContent?.trim() || null;
-    const version = selectedCard.querySelector('.css-18wv2zb-singleValue')?.textContent?.trim() || null;
-    
-    // Tentar montar label completo
-    let labelText = null;
-    
-    if (family && version) {
-      labelText = `${family} ${version}`;
-    } else if (family || version) {
-      labelText = family || version;
-    } else {
-      // Fallback: pegar todo o texto do card
-      labelText = this.extractText(selectedCard);
-    }
-
-    if (!labelText) {
-      console.log('[MGC Extension] Imagem: texto não encontrado no card');
-      return null;
-    }
-
-    console.log('[MGC Extension] Imagem - Label extraído:', labelText, '(família:', family, ', versão:', version, ')');
-
-    // Buscar metadata no catálogo
-    if (window.MGC_MAPPINGS?.getImageMetadata) {
-      const metadata = window.MGC_MAPPINGS.getImageMetadata(labelText);
-      if (metadata) {
-        const enriched = {
-          ...metadata,
-          sourceLabel: labelText,
-          apiValue: metadata.id || metadata.name
+        // Usar o providerName direto (válido para a API)
+        return {
+          displayName: providerName,
+          name: providerName,
+          id: null,
+          sourceLabel: providerName,
+          apiValue: providerName
         };
-        console.log('[MGC Extension] Imagem capturada (com metadata):', enriched);
-        return enriched;
-      } else {
-        console.log('[MGC Extension] Imagem: metadata não encontrada para', labelText);
       }
     }
 
-    // Fallback: retornar dados básicos
-    const fallback = {
-      displayName: labelText,
-      name: labelText,
-      id: null,
-      sourceLabel: labelText,
-      apiValue: labelText
-    };
-    console.log('[MGC Extension] Imagem capturada (sem metadata):', fallback);
-    return fallback;
+    // Abordagem 2 (fallback global): qualquer input[name="image"] com valor
+    const allImageInputs = (section || document).querySelectorAll('input[name="image"]');
+    for (const inp of allImageInputs) {
+      if (inp.value) {
+        const providerName = inp.value.trim();
+        console.log('[MGC Extension] Imagem via fallback input:', providerName);
+        if (window.MGC_MAPPINGS?.getImageMetadata) {
+          const metadata = window.MGC_MAPPINGS.getImageMetadata(providerName);
+          if (metadata) return { ...metadata, sourceLabel: providerName, apiValue: metadata.name };
+        }
+        return { displayName: providerName, name: providerName, id: null, sourceLabel: providerName, apiValue: providerName };
+      }
+    }
+
+    // Abordagem 3: ler a versão exibida no dropdown do card selecionado
+    if (selectedCard) {
+      const versionNode = selectedCard.querySelector('[class*="singleValue"]');
+      const version = versionNode?.textContent?.trim() || null;
+      
+      if (version && window.MGC_MAPPINGS?.getImageMetadata) {
+        const metadata = window.MGC_MAPPINGS.getImageMetadata(version);
+        if (metadata) {
+          console.log('[MGC Extension] Imagem via dropdown version:', version);
+          return { ...metadata, sourceLabel: version, apiValue: metadata.name };
+        }
+      }
+    }
+
+    console.log('[MGC Extension] Imagem: nenhuma imagem detectada');
+    return null;
+  }
+
+  /**
+   * Captura o nome da chave SSH selecionada
+   * @returns {string|null}
+   */
+  captureSSHKeyName() {
+    // 1) Modo "Inserir chave nova": input#key_name (presente quando o radio "insert" está ativo)
+    const keyNameInput = document.querySelector('input#key_name');
+    if (keyNameInput?.value?.trim()) {
+      console.log('[MGC Extension] SSH key capturada (input#key_name):', keyNameInput.value);
+      return keyNameInput.value.trim();
+    }
+
+    // 2) Modo "Selecionar chave existente": encontrar o container da seção SSH inteira
+    //    O label "Chave SSH*" está dentro de um <div class="chakra-stack"> que é filho
+    //    do container da seção. Subimos na DOM até achar o container que também contém
+    //    o radiogroup (ou seja, a seção SSH completa).
+    const allLabels = Array.from(document.querySelectorAll('label'));
+    const sshLabel = allLabels.find(l => {
+      const text = this.normalizeText(l.textContent);
+      return text.includes('chave ssh');
+    });
+
+    if (sshLabel) {
+      // Subir na DOM até encontrar um container que contenha o radiogroup
+      let container = sshLabel.parentElement;
+      for (let i = 0; i < 6 && container; i++) {
+        if (container.querySelector('[role="radiogroup"]')) break;
+        container = container.parentElement;
+      }
+
+      if (container) {
+        // React-select com nome da chave existente selecionada
+        const selectValue = container.querySelector('[class*="singleValue"]');
+        if (selectValue?.textContent?.trim()) {
+          const name = selectValue.textContent.trim();
+          if (name !== 'Selecione' && name !== 'Selecionar' && name.length > 0) {
+            console.log('[MGC Extension] SSH key capturada (dropdown):', name);
+            return name;
+          }
+        }
+
+        // Fallback: native <select> dentro da seção SSH
+        const nativeSelect = container.querySelector('select');
+        if (nativeSelect?.value?.trim()) {
+          console.log('[MGC Extension] SSH key capturada (native select):', nativeSelect.value);
+          return nativeSelect.value.trim();
+        }
+      }
+    }
+
+    console.log('[MGC Extension] SSH key: nenhuma chave selecionada');
+    return null;
   }
 
   /**
@@ -731,11 +804,18 @@ class MGCEquivalentCode {
       return { sku: null, vcpu: null, ramGb: null, priceHour: null, priceMonth: null };
     }
 
-    const skuMatch = text.match(/([A-Z]{2}\d+(?:-\d+){2})/i);
-    const vcpuMatch = text.match(/(\d+)\s*vCPU/i);
-    const ramMatch = text.match(/(\d+)\s*GB/i);
-    const priceHourMatch = text.match(/R\$[^/]+\/\s*hora/i);
-    const priceMonthMatch = text.match(/R\$[^/]+\/\s*m[eê]s/i);
+    // SKU format: XX{digits}-{digits}-{digits} (ex: BV4-8-100, BV1-1-40)
+    // Use word boundary \b to avoid grabbing concatenated text like "BV4-8-1004 vCPU"
+    const skuMatch = text.match(/\b([A-Z]{2}\d+-\d+-\d+)\b/i);
+    
+    // vCPU: match digit(s) immediately before "vCPU" with possible space
+    const vcpuMatch = text.match(/\b(\d{1,3})\s*vCPU/i);
+    
+    // RAM: match digit(s) immediately before "GB" 
+    const ramMatch = text.match(/\b(\d{1,4})\s*GB/i);
+    
+    const priceHourMatch = text.match(/R\$\s*[\d.,]+\s*\/\s*hora/i);
+    const priceMonthMatch = text.match(/R\$\s*[\d.,]+\s*\/\s*m[eê]s/i);
 
     return {
       sku: skuMatch ? skuMatch[1].toUpperCase() : null,
@@ -755,26 +835,42 @@ class MGCEquivalentCode {
     console.log('[MGC Extension] Atualizando display do código');
 
     const codeElement = this.sidebar.querySelector('#mgc-code-output');
+    const billingElement = this.sidebar.querySelector('#mgc-billing-info');
     
     // Preparar dados para geração
     const data = { ...this.formData };
 
     // Gerar código baseado na tab ativa
-    let code = '';
+    let result = null;
     
     if (window.MGC_GENERATORS) {
       if (this.currentTab === 'cli') {
-        code = window.MGC_GENERATORS.generateCLI(data);
+        result = window.MGC_GENERATORS.generateCLI(data);
       } else if (this.currentTab === 'terraform') {
-        code = window.MGC_GENERATORS.generateTerraform(data);
+        result = window.MGC_GENERATORS.generateTerraform(data);
       }
     } else {
-      code = '// Erro: Geradores não carregados';
       console.error('[MGC Extension] MGC_GENERATORS não disponível');
+      codeElement.textContent = '// Erro: Geradores não carregados';
+      return;
     }
 
-    // Atualizar elemento
-    codeElement.textContent = code;
+    // Atualizar código com syntax highlighting
+    if (window.MGC_GENERATORS?.formatCodeWithHighlight) {
+      codeElement.innerHTML = window.MGC_GENERATORS.formatCodeWithHighlight(
+        result.code, this.currentTab
+      );
+    } else {
+      codeElement.textContent = result.code;
+    }
+    
+    // Exibir billing se existir
+    if (billingElement && result.billing) {
+      billingElement.textContent = result.billing;
+      billingElement.style.display = 'block';
+    } else if (billingElement) {
+      billingElement.style.display = 'none';
+    }
   }
 }
 
