@@ -1,141 +1,159 @@
 /**
  * Geradores de código CLI e Terraform
  * Gera código equivalente a partir dos dados capturados do formulário
+ *
+ * Referências:
+ *   CLI:       mgc virtual-machine instances create --help
+ *   Terraform: registry.terraform.io/providers/MagaluCloud/mgc/latest/docs/resources/virtual_machine_instances
  */
+
+/**
+ * Resolve o melhor valor de imagem para uso em código.
+ * Prioridade: providerName (name) > displayName > fallback
+ * @param {Object|null} image
+ * @returns {{imageName: string|null, imageId: string|null}}
+ */
+function resolveImage(image) {
+  if (!image) return { imageName: null, imageId: null };
+  return {
+    imageName: image.name || image.apiValue || image.displayName || null,
+    imageId: image.id || null
+  };
+}
+
+/**
+ * Resolve o melhor valor de machine-type.
+ * Prefere o nome SKU (ex: "BV4-8-100") ao UUID.
+ * @param {Object|null} flavor
+ * @returns {{mtName: string|null, mtId: string|null}}
+ */
+function resolveMachineType(flavor) {
+  if (!flavor) return { mtName: null, mtId: null };
+  return {
+    mtName: flavor.sku || null,
+    mtId: flavor.value && flavor.value !== flavor.sku ? flavor.value : null
+  };
+}
 
 /**
  * Gera comando CLI do MGC
  * @param {Object} data - Dados capturados do formulário
- * @param {string} data.instanceName - Nome da instância
- * @param {Object} data.image - Dados da imagem selecionada
- * @param {Object} data.availabilityZone - Zona de disponibilidade selecionada
- * @param {Object} data.memoryProfile - Perfil de memória ativo
- * @param {Object} data.flavor - Flavor selecionado com detalhes
- * @param {Object} data.disk - Configuração de disco
- * @param {Object} data.connectivity - Preferências de rede
- * @param {boolean} data.gpuEnabled - Se GPU está habilitada
- * @returns {{code: string, billing: string|null}} - Objeto com comando CLI e billing info
+ * @returns {{code: string, billing: string|null}}
  */
 function generateCLI(data = {}) {
   const {
     instanceName,
     image,
     availabilityZone,
-    memoryProfile,
     flavor,
-    disk,
     connectivity,
-    gpuEnabled
+    sshKeyName
   } = data || {};
 
-  const imageValue = image?.id || image?.name || image?.apiValue || image?.displayName || null;
+  const { imageName, imageId } = resolveImage(image);
+  const { mtName, mtId } = resolveMachineType(flavor);
+
   const hasData = Boolean(
     instanceName ||
-    imageValue ||
+    imageName || imageId ||
     availabilityZone?.value ||
-    flavor?.value ||
-    disk?.sizeGb ||
+    mtName || mtId ||
     typeof connectivity?.publicIPv4 === 'boolean' ||
-    gpuEnabled
+    sshKeyName
   );
 
   if (!hasData) {
     return {
-      code: '# Preencha o formulário para gerar o código CLI\n# Campos observados: nome, imagem, zona, tipo, disco, rede e GPU (opcional)',
+      code: '# Preencha o formulário para gerar o código CLI\n# Comando: mgc virtual-machine instances create',
       billing: null
     };
   }
 
   const args = [];
-  const escapeValue = (value) => value?.toString().replace(/"/g, '\\"');
-  const addArg = (flag, value, { quote = true } = {}) => {
+  const esc = (v) => v?.toString().replace(/"/g, '\\"');
+  const add = (flag, value, { quote = true } = {}) => {
     if (value === undefined || value === null || value === '') return;
-    if (typeof value === 'number' && Number.isNaN(value)) return;
-    const formatted = quote ? `"${escapeValue(value)}"` : value;
+    const formatted = quote ? `"${esc(value)}"` : value;
     args.push(`${flag} ${formatted}`);
   };
 
-  if (instanceName) {
-    addArg('--name', instanceName);
+  // --name (required)
+  add('--name', instanceName);
+
+  // --image.name / --image.id
+  if (imageName) {
+    add('--image.name', imageName);
+  } else if (imageId) {
+    add('--image.id', imageId);
   }
 
-  if (imageValue) {
-    addArg('--image', imageValue);
+  // --machine-type.name / --machine-type.id
+  if (mtName) {
+    add('--machine-type.name', mtName);
+  } else if (mtId) {
+    add('--machine-type.id', mtId);
   }
 
-  if (availabilityZone?.value) {
-    addArg('--availability-zone', availabilityZone.value);
-  }
+  // --availability-zone
+  add('--availability-zone', availabilityZone?.value);
 
-  if (flavor?.value) {
-    addArg('--flavor', flavor.value);
-  } else if (flavor?.sku) {
-    addArg('--flavor', flavor.sku);
-  }
-
-  if (disk?.sizeGb) {
-    addArg('--disk-size', disk.sizeGb, { quote: false });
-  }
-
+  // --network.associate-public-ip
   if (typeof connectivity?.publicIPv4 === 'boolean') {
-    addArg('--public-ipv4', connectivity.publicIPv4 ? 'true' : 'false', { quote: false });
+    add('--network.associate-public-ip', connectivity.publicIPv4.toString(), { quote: false });
   }
 
-  if (gpuEnabled) {
-    addArg('--gpu-enabled', 'true', { quote: false });
-  }
+  // --ssh-key-name
+  add('--ssh-key-name', sshKeyName);
 
-  let command = 'mgc virtual-machines create';
+  let command = 'mgc virtual-machine instances create';
   if (args.length) {
     command += ' \\\n  ' + args.join(' \\\n  ');
   }
 
   return {
     code: command,
-    billing: flavor?.priceHour || flavor?.priceMonth ? 
+    billing: flavor?.priceHour || flavor?.priceMonth ?
       `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
   };
 }
 
 /**
  * Gera código Terraform
+ * Ref: registry.terraform.io/providers/MagaluCloud/mgc/latest/docs/resources/virtual_machine_instances
+ *
+ * Required: name, machine_type
+ * Optional: image, availability_zone, ssh_key_name, allocate_public_ipv4,
+ *           user_data, vpc_id, network_interface_id, creation_security_groups
+ *
  * @param {Object} data - Dados capturados do formulário
- * @param {string} data.instanceName - Nome da instância
- * @param {Object} data.image - Dados da imagem selecionada
- * @param {Object} data.availabilityZone - Zona de disponibilidade
- * @param {Object} data.memoryProfile - Perfil de memória ativo
- * @param {Object} data.flavor - Flavor selecionado
- * @param {Object} data.disk - Configuração de disco
- * @param {Object} data.connectivity - Preferências de rede
- * @param {boolean} data.gpuEnabled - Flag de GPU
- * @returns {{code: string, billing: string|null}} - Objeto com código Terraform e billing info
+ * @returns {{code: string, billing: string|null}}
  */
 function generateTerraform(data = {}) {
   const {
     instanceName,
     image,
     availabilityZone,
-    memoryProfile,
     flavor,
-    disk,
     connectivity,
-    gpuEnabled
+    sshKeyName
   } = data || {};
 
-  const imageValue = image?.id || image?.name || image?.apiValue || image?.displayName || null;
+  const { imageName } = resolveImage(image);
+  const { mtName, mtId } = resolveMachineType(flavor);
+  const machineTypeValue = mtName || mtId || null;
+
   const hasData = Boolean(
     instanceName ||
-    imageValue ||
+    imageName ||
     availabilityZone?.value ||
-    flavor?.value ||
-    disk?.sizeGb ||
+    machineTypeValue ||
     typeof connectivity?.publicIPv4 === 'boolean' ||
-    gpuEnabled
+    sshKeyName
   );
 
   if (!hasData) {
     return {
-      code: '# Preencha o formulário para gerar o código Terraform\n# Campos observados: nome, imagem, zona, flavor, disco, rede e GPU (opcional)',
+      code: '# Preencha o formulário para gerar o código Terraform\n# Resource: mgc_virtual_machine_instances',
       billing: null
     };
   }
@@ -144,57 +162,54 @@ function generateTerraform(data = {}) {
     ? instanceName.toLowerCase().replace(/[^a-z0-9_]/g, '_')
     : 'vm_instance';
 
-  const terraform = [];
+  const lines = [];
+  const pad = (key) => key.padEnd(20);
 
-  terraform.push(`resource "mgc_virtual_machine" "${resourceName}" {`);
+  lines.push(`resource "mgc_virtual_machine_instances" "${resourceName}" {`);
 
+  // name (required)
   if (instanceName) {
-    terraform.push(`  name             = "${instanceName}"`);
+    lines.push(`  ${pad('name')} = "${instanceName}"`);
   } else {
-    terraform.push('  # name          = "adicione-o-nome-da-instancia"');
+    lines.push(`  # ${pad('name')} = "nome-da-instancia"`);
   }
 
+  // machine_type (required)
+  if (machineTypeValue) {
+    lines.push(`  ${pad('machine_type')} = "${machineTypeValue}"`);
+  } else {
+    lines.push(`  # ${pad('machine_type')} = "BV2-4-100"`);
+  }
+
+  // image
+  if (imageName) {
+    lines.push(`  ${pad('image')} = "${imageName}"`);
+  } else {
+    lines.push(`  # ${pad('image')} = "cloud-ubuntu-24.04 LTS"`);
+  }
+
+  // availability_zone
   if (availabilityZone?.value) {
-    terraform.push(`  availability_zone = "${availabilityZone.value}"`);
-  } else {
-    terraform.push('  # availability_zone = "selecione-uma-zona"');
+    lines.push(`  ${pad('availability_zone')} = "${availabilityZone.value}"`);
   }
 
-  if (imageValue) {
-    terraform.push(`  image            = "${imageValue}"`);
+  // ssh_key_name
+  if (sshKeyName) {
+    lines.push(`  ${pad('ssh_key_name')} = "${sshKeyName}"`);
   } else {
-    terraform.push('  # image          = "selecione-uma-imagem"');
+    lines.push(`  # ${pad('ssh_key_name')} = "sua-chave-ssh"`);
   }
 
-  if (flavor?.value || flavor?.sku) {
-    terraform.push(`  machine_type           = "${flavor.value || flavor.sku}"`);
-  } else {
-    terraform.push('  # machine_type        = "selecione-um-machine-type"');
-  }
-
-  if (disk?.sizeGb) {
-    terraform.push(`  disk_size        = ${disk.sizeGb}`);
-  } else {
-    terraform.push('  # disk_size     = 40');
-  }
-
+  // allocate_public_ipv4
   if (typeof connectivity?.publicIPv4 === 'boolean') {
-    terraform.push(`  allocate_public_ipv4     = ${connectivity.publicIPv4}`);
-  } else {
-    terraform.push('  # allocate_public_ipv4   = true');
+    lines.push(`  ${pad('allocate_public_ipv4')} = ${connectivity.publicIPv4}`);
   }
 
-  if (gpuEnabled) {
-    terraform.push('  gpu_enabled      = true');
-  } else {
-    terraform.push('  # gpu_enabled   = false');
-  }
-
-  terraform.push('}');
+  lines.push('}');
 
   return {
-    code: terraform.join('\n'),
-    billing: flavor?.priceHour || flavor?.priceMonth ? 
+    code: lines.join('\n'),
+    billing: flavor?.priceHour || flavor?.priceMonth ?
       `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
   };
 }
@@ -207,33 +222,64 @@ function generateTerraform(data = {}) {
  */
 function formatCodeWithHighlight(code, language) {
   if (!code) return '';
-  
-  let formatted = code;
-  
+
   // Escapar HTML
-  formatted = formatted
+  let escaped = code
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-  
-  // Highlight para CLI (bash-like)
+
+  // Estratégia: extrair strings "..." para placeholders ANTES de inserir spans,
+  // assim o regex de strings nunca casa com atributos class="..." do HTML gerado.
+
   if (language === 'cli') {
-    formatted = formatted
-      .replace(/^(#.*)$/gm, '<span class="comment">$1</span>') // Comentários
-      .replace(/--([a-z-]+)/g, '<span class="flag">--$1</span>') // Flags
-      .replace(/"([^"]*)"/g, '<span class="string">"$1"</span>'); // Strings
+    escaped = escaped.split('\n').map(line => {
+      // Comentários — linha inteira
+      if (line.trimStart().startsWith('#')) {
+        return `<span class="comment">${line}</span>`;
+      }
+      // 1) Extrair strings para placeholders
+      const strings = [];
+      let processed = line.replace(/"([^"]*)"/g, (match) => {
+        strings.push(`<span class="string">${match}</span>`);
+        return `\x00S${strings.length - 1}\x00`;
+      });
+      // 2) Flags (--flag.name, --flag-name)
+      processed = processed.replace(/--([a-z][a-z0-9._-]*)/gi, '<span class="flag">--$1</span>');
+      // 3) Booleans soltos (true/false)
+      processed = processed.replace(/\b(true|false)\b/g, '<span class="keyword">$1</span>');
+      // 4) Restaurar strings
+      processed = processed.replace(/\x00S(\d+)\x00/g, (_, i) => strings[i]);
+      return processed;
+    }).join('\n');
   }
-  
-  // Highlight para Terraform (HCL)
+
   if (language === 'terraform') {
-    formatted = formatted
-      .replace(/^(#.*)$/gm, '<span class="comment">$1</span>') // Comentários
-      .replace(/\b(resource|provider|variable|output|module)\b/g, '<span class="keyword">$1</span>') // Keywords
-      .replace(/"([^"]*)"/g, '<span class="string">"$1"</span>') // Strings
-      .replace(/\b([a-z_][a-z0-9_]*)\s*=/g, '<span class="property">$1</span> ='); // Properties
+    escaped = escaped.split('\n').map(line => {
+      // Comentários — linha inteira
+      if (line.trimStart().startsWith('#')) {
+        return `<span class="comment">${line}</span>`;
+      }
+      // 1) Extrair strings para placeholders
+      const strings = [];
+      let processed = line.replace(/"([^"]*)"/g, (match) => {
+        strings.push(`<span class="string">${match}</span>`);
+        return `\x00S${strings.length - 1}\x00`;
+      });
+      // 2) Properties (key = ...) — ANTES de keywords para não casar class= dos spans
+      processed = processed.replace(/\b([a-z_][a-z0-9_]*)\s*=/g, '<span class="property">$1</span> =');
+      // 3) Keywords HCL
+      processed = processed.replace(/\b(resource|provider|variable|output|module|data|locals|terraform)\b/g,
+        '<span class="keyword">$1</span>');
+      // 4) Booleans
+      processed = processed.replace(/\b(true|false)\b/g, '<span class="keyword">$1</span>');
+      // 5) Restaurar strings
+      processed = processed.replace(/\x00S(\d+)\x00/g, (_, i) => strings[i]);
+      return processed;
+    }).join('\n');
   }
-  
-  return formatted;
+
+  return escaped;
 }
 
 // Exportar para uso no content script

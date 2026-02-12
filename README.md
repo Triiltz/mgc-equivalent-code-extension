@@ -2,15 +2,22 @@
 
 Chrome extension that generates equivalent CLI and Terraform code from Magalu Cloud console.
 
-## 📋 MVP Features
+## 📋 Features
 
 - ✅ Automatic capture of VM creation form fields:
   - Instance name
-  - Selected image (Ubuntu, Debian, Rocky, Oracle Linux)
+  - Selected image (Ubuntu, Debian, Rocky, Oracle Linux, Fedora, openSUSE, Windows)
+  - Machine type / Flavor (SKU)
+  - Availability zone
+  - Public IPv4 toggle
+  - SSH key name
+  - Disk size, memory profile, GPU toggle
 - ✅ Side panel with CLI and Terraform tabs
-- ✅ Real-time code generation
-- ✅ Copy code button
-- ✅ Automatic UI → API value mapping
+- ✅ Real-time code generation (updates as you fill the form)
+- ✅ Copy code button with visual feedback
+- ✅ Syntax highlighting (comments, flags, strings, keywords)
+- ✅ Image catalog with 14 images synced from the real API (`mgc virtual-machine images list`)
+- ✅ Collapsible sidebar
 
 ## 🚀 Installation
 
@@ -62,39 +69,52 @@ The content script detects when you're on the Magalu Cloud console VM creation p
 ### 2. Data Capture
 
 Uses `MutationObserver` to monitor DOM changes and captures:
-- **Name**: Inputs with `name`, `placeholder`, or `id` containing "name"/"nome"
-- **Image**: Elements with `[data-checked="true"]`
+- **Name**: Input `#name`
+- **Image**: Hidden `input[name="image"]` (provider name) + selected card fallback
+- **Machine Type**: Flavor cards with `data-testid="flavor-card"` + `input[name="type"]`
+- **Availability Zone**: Radio buttons in the zone section
+- **Connectivity**: Checkbox for public IPv4
+- **SSH Key**: Input `#key_name` or select dropdown in SSH section
 
 ### 3. Mapping
 
-Converts user-friendly UI names to API values:
+Converts UI display names to API provider names using a catalog synced with `mgc virtual-machine images list`:
 
 ```javascript
-"Ubuntu 22.04 LTS" → "ubuntu-22.04-lts"
-"Debian 13 LTS" → "debian-13-lts"
+"Ubuntu 24.04 LTS" → "cloud-ubuntu-24.04 LTS"
+"Debian 13 LTS"    → "cloud-debian-13 LTS"
+"Rocky Linux 9"    → "cloud-rocky-09"
 ```
 
 ### 4. Code Generation
 
 #### CLI
 ```bash
-mgc virtual-machines create \
+mgc virtual-machine instances create \
   --name "my-vm" \
-  --image "ubuntu-22.04-lts"
+  --image.name "cloud-ubuntu-24.04 LTS" \
+  --machine-type.name "BV4-8-100" \
+  --availability-zone "br-se1-a" \
+  --network.associate-public-ip true \
+  --ssh-key-name "my-key"
 ```
 
 #### Terraform
 ```hcl
-resource "mgc_virtual_machine" "my_vm" {
-  name  = "my-vm"
-  image = "ubuntu-22.04-lts"
+resource "mgc_virtual_machine_instances" "my_vm" {
+  name                 = "my-vm"
+  machine_type         = "BV4-8-100"
+  image                = "cloud-ubuntu-24.04 LTS"
+  availability_zone    = "br-se1-a"
+  ssh_key_name         = "my-key"
+  allocate_public_ipv4 = true
 }
 ```
 
 ## 🎨 Interface
 
-- **Sidebar**: Fixed position on the right, 500px width
-- **Theme**: VS Code Dark (#1e1e1e)
+- **Sidebar**: Fixed position on the right, 550px width
+- **Theme**: Magalu Cloud brand colors (#6B4FFF)
 - **Tabs**: CLI and Terraform
 - **Syntax Highlighting**: Basic highlighting for comments, keywords, strings
 - **Copy Button**: Visual feedback on copy
@@ -107,20 +127,22 @@ Open Chrome Console (F12) to see logs:
 [MGC Extension] Inicializando...
 [MGC Extension] Página de criar VM detectada
 [MGC Extension] Sidebar injetada com sucesso
-[MGC Extension] Nome capturado: minha-vm
-[MGC Extension] Imagem capturada: Ubuntu 22.04 LTS
-[MGC Extension] Imagem mapeada: Ubuntu 22.04 LTS -> ubuntu-22.04-lts
+[MGC Extension] Nome capturado via input#name: minha-vm
+[MGC Extension] Imagem via input[name=image]: cloud-ubuntu-24.04 LTS
+[MGC Extension] Flavor capturado: {sku: 'BV4-8-100', vcpu: 4, ramGb: 8}
+[MGC Extension] SSH key capturada: my-key
 ```
 
-## 📝 Future Features (Post-MVP)
+## 📝 Future Features
 
-- [ ] Capture more fields (machine type, region, disk, network)
-- [ ] Add more code options (Python SDK, Go SDK)
+- [ ] Add more code options (Python SDK, Go SDK, REST API)
 - [ ] Export code to file
-- [ ] Generated code validation
+- [ ] Generated code validation against `mgc` CLI
+- [ ] Support more resource types (Block Storage, Kubernetes, Database)
 - [ ] Light/dark theme toggle
-- [ ] Custom icons
-- [ ] Extension settings
+- [ ] Custom icons (replace .txt placeholders)
+- [ ] Extension popup/settings page
+- [ ] Terraform provider block generation
 
 ## 🔒 Permissions
 
