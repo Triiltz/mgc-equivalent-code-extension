@@ -74,7 +74,7 @@ function generateCLI(data = {}) {
   const add = (flag, value, { quote = true } = {}) => {
     if (value === undefined || value === null || value === '') return;
     const formatted = quote ? `"${esc(value)}"` : value;
-    args.push(`${flag} ${formatted}`);
+    args.push(`${flag}=${formatted}`);
   };
 
   // --name (required)
