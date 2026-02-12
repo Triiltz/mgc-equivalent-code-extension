@@ -21,11 +21,6 @@
       "run_at": "document_idle"
     }
   ],
-  "icons": {
-    "16": "icons/icon16.txt",
-    "48": "icons/icon48.txt",
-    "128": "icons/icon128.txt"
-  },
   "action": {
     "default_title": "MGC Equivalent Code"
   }

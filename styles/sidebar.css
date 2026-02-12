@@ -55,9 +55,10 @@
 
 /* Estado colapsado */
 #mgc-equivalent-code-sidebar.collapsed {
-  width: 60px;
+  width: 0;
   background: transparent;
   box-shadow: none;
+  pointer-events: none;
 }
 
 #mgc-equivalent-code-sidebar.collapsed .mgc-sidebar-main {
@@ -66,41 +67,82 @@
   visibility: hidden;
 }
 
-/* Botão de toggle (minimizar/expandir) */
+/* Pill button (botão flutuante quando sidebar minimizada) */
+#mgc-equivalent-code-sidebar.collapsed .mgc-toggle-button {
+  pointer-events: all;
+}
+
+/* Botão de toggle */
 .mgc-toggle-button {
-  position: absolute;
-  left: -40px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 80px;
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  height: 38px;
+  padding: 0 16px;
   background: var(--mgc-primary);
   color: white;
   border: none;
-  border-radius: 8px 0 0 8px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: bold;
-  box-shadow: -2px 2px 8px rgba(107, 79, 255, 0.3);
-  transition: all 0.2s ease;
-  z-index: 1;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-family: inherit;
+  box-shadow: 0 2px 12px rgba(2, 43, 155, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000000;
+  white-space: nowrap;
 }
 
 .mgc-toggle-button:hover {
   background: var(--mgc-primary-dark);
-  left: -42px;
-  box-shadow: -4px 4px 12px rgba(107, 79, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(107, 79, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .mgc-toggle-button:active {
-  transform: translateY(-50%) scale(0.95);
+  transform: translateY(0) scale(0.97);
 }
 
+/* Ícone </> dentro do botão */
 .mgc-toggle-icon {
-  transition: transform 0.3s ease;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  opacity: 0.9;
+}
+
+/* Quando sidebar aberta: botão vira "X" discreto no header */
+#mgc-equivalent-code-sidebar:not(.collapsed) .mgc-toggle-button {
+  position: absolute;
+  top: 20px;
+  right: 16px;
+  left: auto;
+  height: 32px;
+  width: 32px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+  border-radius: 8px;
+  justify-content: center;
+}
+
+#mgc-equivalent-code-sidebar:not(.collapsed) .mgc-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: none;
+}
+
+#mgc-equivalent-code-sidebar:not(.collapsed) .mgc-toggle-label {
+  display: none;
+}
+
+#mgc-equivalent-code-sidebar:not(.collapsed) .mgc-toggle-icon {
+  font-family: inherit;
+  font-size: 18px;
+  opacity: 1;
 }
 
 /* Container principal */

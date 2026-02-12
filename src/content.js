@@ -111,7 +111,8 @@ class MGCEquivalentCode {
     this.sidebar.id = 'mgc-equivalent-code-sidebar';
     this.sidebar.innerHTML = `
       <button id="mgc-toggle-btn" class="mgc-toggle-button" title="Minimizar/Expandir">
-        <span class="mgc-toggle-icon">«</span>
+        <span class="mgc-toggle-icon">&lt;/&gt;</span>
+        <span class="mgc-toggle-label">Equivalent Code</span>
       </button>
       
       <div class="mgc-sidebar-main">
@@ -242,7 +243,7 @@ class MGCEquivalentCode {
     
     // Atualizar ícone do botão
     const toggleIcon = this.sidebar.querySelector('.mgc-toggle-icon');
-    toggleIcon.textContent = this.isCollapsed ? '»' : '«';
+    toggleIcon.textContent = this.isCollapsed ? '</>' : '✕';
   }
 
   /**
