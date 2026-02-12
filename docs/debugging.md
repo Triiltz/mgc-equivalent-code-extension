@@ -25,7 +25,7 @@ The extension logs all capture activity to the browser console. Open DevTools (`
 ### Fields not captured
 
 - The console uses Chakra UI with dynamically generated class names. If MGC updates their frontend, selectors in `content.js` may need updating.
-- Use `mgcfieldmapper.js` in the browser console to inspect the current DOM structure.
+- Use `tools/mgcfieldmapper.js` in the browser console to inspect the current DOM structure.
 
 ### Image not recognized
 
@@ -33,10 +33,10 @@ The extension logs all capture activity to the browser console. Open DevTools (`
 
 ## Field Mapper Tool
 
-`mgcfieldmapper.js` is a standalone script you can paste into the browser console to inspect all form fields:
+`tools/mgcfieldmapper.js` is a standalone script you can paste into the browser console to inspect all form fields:
 
 ```javascript
-// Paste mgcfieldmapper.js contents into the console
+// Paste tools/mgcfieldmapper.js contents into the console
 const mapper = new MGCFieldMapper();
 mapper.mapAll();
 // Outputs all captured fields with selectors

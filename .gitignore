@@ -3,9 +3,6 @@
 # .gitignore
 # ===================================
 
-# Arquivo temporário de mapeamento de campos
-mgcfieldmapper.js
-
 # ===================================
 # Chrome Extension
 # ===================================

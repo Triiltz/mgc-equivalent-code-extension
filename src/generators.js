@@ -113,7 +113,7 @@ function generateCLI(data = {}) {
   return {
     code: command,
     billing: flavor?.priceHour || flavor?.priceMonth ?
-      `Custos estimados: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
+      `Estimated costs: ${[flavor.priceHour, flavor.priceMonth].filter(Boolean).join(' | ')}` : null
   };
 }
 

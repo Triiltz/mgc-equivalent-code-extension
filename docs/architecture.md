@@ -51,6 +51,8 @@ mgc-equivalent-code-extension/
 │   └── mappings.js           # Image catalog (UI name → API provider name)
 ├── styles/
 │   └── sidebar.css           # Sidebar styles (Magalu Cloud brand)
+├── tools/
+│   └── mgcfieldmapper.js     # Debug tool for DOM field inspection
 ├── docs/                     # Technical documentation
 └── tests/                    # Saved HTML snapshots for development
 ```
