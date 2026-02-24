@@ -1,10 +1,10 @@
 /**
- * Mapeamento de valores da UI para valores da API
- * Converte nomes amigáveis exibidos no console para identificadores da API
+ * UI to API value mappings
+ * Converts friendly display names from the console to API identifiers
  */
 
-// Dados obtidos via: mgc virtual-machine images list --raw --output json
-// Última atualização: 2026-02-12
+// Data obtained via: mgc virtual-machine images list --raw --output json
+// Last updated: 2026-02-12
 const RAW_IMAGE_DATA = [
   {
     displayName: 'Ubuntu 24.04 LTS',
@@ -217,4 +217,4 @@ window.MGC_MAPPINGS = {
   normalizeImageName
 };
 
-console.log('[MGC Extension] Mappings carregados:', IMAGE_CATALOG.length, 'imagens');
+console.log('[MGC Extension] Mappings loaded:', IMAGE_CATALOG.length, 'images');

@@ -7,19 +7,19 @@
 # Chrome Extension
 # ===================================
 
-# Arquivos de build e empacotamento
+# Build and packaging files
 *.crx
 *.pem
 *.zip
 dist/
 build/
 
-# Diretório de testes locais
+# Local test directory
 test-pages/
 examples/
 
 # ===================================
-# Node.js (se usar no futuro)
+# Node.js (if used in the future)
 # ===================================
 
 # Dependencies
@@ -35,7 +35,7 @@ yarn.lock
 pnpm-lock.yaml
 
 # ===================================
-# IDEs e Editores
+# IDEs and Editors
 # ===================================
 
 # Visual Studio Code
@@ -67,7 +67,7 @@ pnpm-lock.yaml
 .\#*
 
 # ===================================
-# Sistema Operacional
+# Operating System
 # ===================================
 
 # macOS
@@ -105,14 +105,14 @@ $RECYCLE.BIN/
 .nfs*
 
 # ===================================
-# Logs e Temporários
+# Logs and Temporary Files
 # ===================================
 
 # Logs
 logs/
 *.log
 
-# Arquivos temporários
+# Temporary files
 tmp/
 temp/
 *.tmp
@@ -121,7 +121,7 @@ temp/
 *~.nib
 
 # ===================================
-# Testes e Coverage
+# Tests and Coverage
 # ===================================
 
 # Coverage
@@ -134,17 +134,17 @@ coverage/
 jest-results.json
 
 # ===================================
-# Arquivos Sensíveis
+# Sensitive Files
 # ===================================
 
-# Variáveis de ambiente
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Chaves e certificados
+# Keys and certificates
 *.key
 *.cert
 *.pem
@@ -152,22 +152,22 @@ secrets/
 credentials/
 
 # ===================================
-# Documentação gerada
+# Generated Documentation
 # ===================================
 
-# Documentação gerada automaticamente
+# Auto-generated documentation
 docs/generated/
 api-docs/
 
 # ===================================
-# Diversos
+# Miscellaneous
 # ===================================
 
-# Arquivos de cache
+# Cache files
 .cache/
 *.cache
 
-# Arquivos de debug pessoais
+# Personal debug files
 debug/
 debug.js
 test.js

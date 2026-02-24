@@ -1,13 +1,13 @@
 /**
- * Content Script Principal
- * Captura dados do formulário de VM e injeta sidebar com código equivalente
+ * Main Content Script
+ * Captures VM form data and injects a sidebar with equivalent code
  */
 
 class MGCEquivalentCode {
   constructor() {
     this.sidebar = null;
     this.currentTab = 'cli';
-    this.isCollapsed = false; // Estado de minimização
+    this.isCollapsed = false; // Collapse state
     this.formData = this.createEmptyFormData();
     this.observer = null;
     
@@ -19,40 +19,40 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Inicializa a extensão
+   * Initializes the extension
    */
   init() {
-    // Verificar se estamos na página de criar VM
+    // Check if we are on the VM creation page
     if (this.isCreateVMPage()) {
-      console.log('[MGC Extension] Página de criar VM detectada');
+      console.log('[MGC Extension] VM creation page detected');
       this.injectSidebar();
       this.startObserving();
       this.attachEventListeners();
       this.updateFormData();
     } else {
-      console.log('[MGC Extension] Aguardando navegação para página de criar VM');
-      // Observar mudanças de URL (SPA)
+      console.log('[MGC Extension] Waiting for navigation to VM creation page');
+      // Watch for URL changes (SPA)
       this.observeUrlChanges();
     }
   }
 
   /**
-   * Verifica se estamos na página de criar VM
+   * Checks if we are on the VM creation page
    * @returns {boolean}
    */
   isCreateVMPage() {
-    // Detectar pela URL e elementos da página
+    // Detect by URL and page elements
     const url = window.location.href;
-    console.log('[MGC Extension] URL atual:', url);
+    console.log('[MGC Extension] Current URL:', url);
     
     const isVMUrl = url.includes('virtual-machine') || 
                     url.includes('vm') || 
                     url.includes('compute') ||
-                    url.includes('instancia'); // Palavra em português
+                    url.includes('instancia'); // Portuguese word in Magalu Cloud console URL
     
-    console.log('[MGC Extension] URL contém VM?', isVMUrl);
+    console.log('[MGC Extension] URL contains VM?', isVMUrl);
     
-    // Também verificar se há elementos típicos de formulário de VM
+    // Also check for typical VM form elements
     const hasDataChecked = !!document.querySelector('[data-checked]');
     const hasNameInput = !!document.querySelector('input[placeholder*="nome" i]');
     const hasNameAttr = !!document.querySelector('input[name*="name" i]');
@@ -74,7 +74,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Observa mudanças de URL para SPAs
+   * Watches for URL changes in SPAs
    */
   observeUrlChanges() {
     let lastUrl = location.href;
@@ -83,13 +83,13 @@ class MGCEquivalentCode {
       const currentUrl = location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
-        console.log('[MGC Extension] URL mudou:', currentUrl);
+        console.log('[MGC Extension] URL changed:', currentUrl);
         
         if (this.isCreateVMPage() && !this.sidebar) {
-          console.log('[MGC Extension] Entrando na página de criar VM');
+          console.log('[MGC Extension] Entering VM creation page');
           this.init();
         } else if (!this.isCreateVMPage() && this.sidebar) {
-          console.log('[MGC Extension] Saindo da página de criar VM');
+          console.log('[MGC Extension] Leaving VM creation page');
           this.removeSidebar();
         }
       }
@@ -97,15 +97,15 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Injeta a sidebar na página
+   * Injects the sidebar into the page
    */
   injectSidebar() {
     if (this.sidebar) {
-      console.log('[MGC Extension] Sidebar já existe');
+      console.log('[MGC Extension] Sidebar already exists');
       return;
     }
 
-    console.log('[MGC Extension] Injetando sidebar');
+    console.log('[MGC Extension] Injecting sidebar');
 
     this.sidebar = document.createElement('div');
     this.sidebar.id = 'mgc-equivalent-code-sidebar';
@@ -143,20 +143,20 @@ class MGCEquivalentCode {
     `;
 
     document.body.appendChild(this.sidebar);
-    console.log('[MGC Extension] Sidebar injetada com sucesso');
+    console.log('[MGC Extension] Sidebar injected successfully');
 
-    // Event listeners para tabs e botão copiar
+    // Event listeners for tabs and copy button
     this.setupSidebarListeners();
   }
 
   /**
-   * Remove a sidebar
+   * Removes the sidebar
    */
   removeSidebar() {
     if (this.sidebar) {
       this.sidebar.remove();
       this.sidebar = null;
-      console.log('[MGC Extension] Sidebar removida');
+      console.log('[MGC Extension] Sidebar removed');
     }
     
     if (this.observer) {
@@ -166,7 +166,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Configura listeners da sidebar
+   * Sets up sidebar event listeners
    */
   setupSidebarListeners() {
     // Tabs
@@ -178,25 +178,25 @@ class MGCEquivalentCode {
       });
     });
 
-    // Botão copiar
+    // Copy button
     const copyBtn = this.sidebar.querySelector('#mgc-copy-btn');
     copyBtn.addEventListener('click', () => this.copyCode());
     
-    // Botão toggle (minimizar/expandir)
+    // Toggle button (collapse/expand)
     const toggleBtn = this.sidebar.querySelector('#mgc-toggle-btn');
     toggleBtn.addEventListener('click', () => this.toggleSidebar());
   }
 
   /**
-   * Alterna entre tabs
-   * @param {string} tabName - Nome da tab (cli ou terraform)
+   * Switches between tabs
+   * @param {string} tabName - Tab name (cli or terraform)
    */
   switchTab(tabName) {
-    console.log('[MGC Extension] Alternando para tab:', tabName);
+    console.log('[MGC Extension] Switching to tab:', tabName);
     
     this.currentTab = tabName;
     
-    // Atualizar UI das tabs
+    // Update tab UI
     const tabs = this.sidebar.querySelectorAll('.mgc-tab');
     tabs.forEach(tab => {
       if (tab.dataset.tab === tabName) {
@@ -206,12 +206,12 @@ class MGCEquivalentCode {
       }
     });
 
-    // Atualizar código
+    // Update code
     this.updateCodeDisplay();
   }
 
   /**
-   * Copia o código para área de transferência
+   * Copies the code to the clipboard
    */
   async copyCode() {
     const codeElement = this.sidebar.querySelector('#mgc-code-output');
@@ -219,35 +219,35 @@ class MGCEquivalentCode {
     
     try {
       await navigator.clipboard.writeText(code);
-      this.showCopyFeedback('✓ Copiado!');
-      console.log('[MGC Extension] Código copiado');
+      this.showCopyFeedback('✓ Copied!');
+      console.log('[MGC Extension] Code copied');
     } catch (err) {
-      console.error('[MGC Extension] Erro ao copiar:', err);
-      this.showCopyFeedback('✗ Erro ao copiar');
+      console.error('[MGC Extension] Copy error:', err);
+      this.showCopyFeedback('✗ Copy failed');
     }
   }
 
   /**
-   * Alterna entre sidebar expandida e colapsada
+   * Toggles the sidebar between expanded and collapsed
    */
   toggleSidebar() {
     this.isCollapsed = !this.isCollapsed;
     
     if (this.isCollapsed) {
       this.sidebar.classList.add('collapsed');
-      console.log('[MGC Extension] Sidebar minimizada');
+      console.log('[MGC Extension] Sidebar collapsed');
     } else {
       this.sidebar.classList.remove('collapsed');
-      console.log('[MGC Extension] Sidebar expandida');
+      console.log('[MGC Extension] Sidebar expanded');
     }
     
-    // Atualizar ícone do botão
+    // Update button icon
     const toggleIcon = this.sidebar.querySelector('.mgc-toggle-icon');
     toggleIcon.textContent = this.isCollapsed ? '</>' : '✕';
   }
 
   /**
-   * Cria objeto base de dados do formulário
+   * Creates the base form data object
    */
   createEmptyFormData() {
     return {
@@ -264,8 +264,8 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Mostra feedback de cópia
-   * @param {string} message - Mensagem de feedback
+   * Shows copy feedback message
+   * @param {string} message - Feedback message
    */
   showCopyFeedback(message) {
     const feedback = this.sidebar.querySelector('#mgc-copy-feedback');
@@ -278,21 +278,21 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Inicia observação do formulário
+   * Starts observing the form
    */
   startObserving() {
-    console.log('[MGC Extension] Iniciando observação do DOM');
+    console.log('[MGC Extension] Starting DOM observation');
 
-    // Configurar MutationObserver
+    // Set up MutationObserver
     this.observer = new MutationObserver((mutations) => {
-      // Debounce: atualizar apenas após 300ms de inatividade
+      // Debounce: update only after 300ms of inactivity
       clearTimeout(this.updateTimeout);
       this.updateTimeout = setTimeout(() => {
         this.updateFormData();
       }, 300);
     });
 
-    // Observar todo o body
+    // Observe the entire body
     this.observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -302,29 +302,29 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Adiciona listeners de eventos do formulário
+   * Attaches form event listeners
    */
   attachEventListeners() {
-    // Listener para inputs de texto (nome da instância)
+    // Listener for text inputs (instance name)
     document.addEventListener('input', (e) => {
       if (e.target.matches('input[type="text"]')) {
-        console.log('[MGC Extension] Input detectado:', e.target.name, e.target.value);
+        console.log('[MGC Extension] Input detected:', e.target.name, e.target.value);
         this.updateFormData();
       }
     });
 
-    // Listener para cliques (seleção de imagem)
+    // Listener for clicks (image selection)
     document.addEventListener('click', (e) => {
-      // Detectar cliques em elementos de seleção
+      // Detect clicks on selection elements
       setTimeout(() => this.updateFormData(), 100);
     });
   }
 
   /**
-   * Atualiza dados do formulário capturados
+   * Updates the captured form data
    */
   updateFormData() {
-    console.log('[MGC Extension] ===== Iniciando captura de dados =====');
+    console.log('[MGC Extension] ===== Starting data capture =====');
 
     const instanceName = this.captureInstanceName();
     const availabilityZone = this.captureAvailabilityZone();
@@ -348,35 +348,35 @@ class MGCEquivalentCode {
       sshKeyName
     };
 
-    console.log('[MGC Extension] Dados capturados:', nextData);
+    console.log('[MGC Extension] Captured data:', nextData);
 
     const changed = JSON.stringify(this.formData) !== JSON.stringify(nextData);
 
     if (changed) {
       this.formData = nextData;
-      console.log('[MGC Extension] ✓ Dados atualizados no estado');
+      console.log('[MGC Extension] ✓ State updated with new data');
       this.updateCodeDisplay();
     } else {
-      console.log('[MGC Extension] Dados não mudaram, skip update');
+      console.log('[MGC Extension] Data unchanged, skipping update');
     }
     
-    console.log('[MGC Extension] ===== Fim da captura =====');
+    console.log('[MGC Extension] ===== End of capture =====');
   }
 
   /**
-   * Captura o nome da instância do formulário
+   * Captures the instance name from the form
    * @returns {string}
    */
   captureInstanceName() {
-    // Procurar especificamente o input com id="name" primeiro (mais específico)
+    // Look for input#name first (most specific)
     const nameInput = document.querySelector('input#name');
     if (nameInput?.value && nameInput.value.length > 0) {
       const value = nameInput.value.trim();
-      console.log('[MGC Extension] Nome capturado via input#name:', value);
+      console.log('[MGC Extension] Name captured via input#name:', value);
       return value;
     }
 
-    // Fallback: tentar outros seletores
+    // Fallback: try other selectors
     const selectors = [
       'input[name="name"]',
       'input[placeholder*="nome" i]',
@@ -387,23 +387,23 @@ class MGCEquivalentCode {
       const input = document.querySelector(selector);
       if (input && input.value && input.value.length > 0) {
         const value = input.value.trim();
-        console.log('[MGC Extension] Nome capturado via', selector, ':', value);
+        console.log('[MGC Extension] Name captured via', selector, ':', value);
         return value;
       }
     }
 
-    console.log('[MGC Extension] Nome da instância não encontrado');
+    console.log('[MGC Extension] Instance name not found');
     return '';
   }
 
   /**
-   * Captura a zona de disponibilidade selecionada
+   * Captures the selected availability zone
    * @returns {{label: string, value: string}|null}
    */
   captureAvailabilityZone() {
     const section = this.findSectionByLabel('zona de disponibilidade');
     if (!section) {
-      console.log('[MGC Extension] Seção de zona não encontrada');
+      console.log('[MGC Extension] Zone section not found');
       return null;
     }
 
@@ -416,22 +416,22 @@ class MGCEquivalentCode {
     const value = input?.value || text;
 
     if (!text && !value) {
-      console.log('[MGC Extension] Zona: nenhuma opção selecionada');
+      console.log('[MGC Extension] Zone: no option selected');
       return null;
     }
 
-    console.log('[MGC Extension] Zona capturada:', { label: text, value });
+    console.log('[MGC Extension] Zone captured:', { label: text, value });
     return { label: text, value };
   }
 
   /**
-   * Captura o perfil de memória (aba ativa)
+   * Captures the memory profile (active tab)
    * @returns {{label: string, options: string[]}|null}
    */
   captureMemoryProfile() {
     const section = this.findSectionByLabel('tipo de instância');
     if (!section) {
-      console.log('[MGC Extension] Seção de tipo de instância não encontrada');
+      console.log('[MGC Extension] Instance type section not found');
       return null;
     }
 
@@ -439,24 +439,24 @@ class MGCEquivalentCode {
     const activeTab = tablist?.querySelector('[role="tab"][aria-selected="true"]');
     
     if (!activeTab) {
-      console.log('[MGC Extension] Perfil de memória: nenhuma aba ativa');
+      console.log('[MGC Extension] Memory profile: no active tab');
       return null;
     }
 
     const label = this.extractText(activeTab);
-    console.log('[MGC Extension] Perfil de memória capturado:', label);
+    console.log('[MGC Extension] Memory profile captured:', label);
     
     return { label };
   }
 
   /**
-   * Captura o flavor selecionado
+   * Captures the selected flavor
    * @returns {{label: string, value: string|null, sku?: string|null, vcpu?: number|null, ramGb?: number|null, priceHour?: string|null, priceMonth?: string|null}|null}
    */
   captureFlavor() {
     const section = this.findSectionByLabel('tipo de instância');
     if (!section) {
-      console.log('[MGC Extension] Seção de tipo de instância não encontrada para flavor');
+      console.log('[MGC Extension] Instance type section not found for flavor');
       return null;
     }
 
@@ -468,12 +468,12 @@ class MGCEquivalentCode {
       section.querySelector('input[name="type"]:checked');
     
     if (!selectedCard && !input?.value) {
-      console.log('[MGC Extension] Flavor: nenhum selecionado');
+      console.log('[MGC Extension] Flavor: none selected');
       return null;
     }
 
-    // Ler cada campo separadamente dos <p> do card para evitar concatenação
-    // Estrutura: <p>BV4-8-100</p> <p>4 vCPU</p> <p>8 GB RAM</p> <p>R$ .../hora</p> <p>R$ .../mês</p>
+    // Read each field separately from card <p> elements to avoid concatenation
+    // Structure: <p>BV4-8-100</p> <p>4 vCPU</p> <p>8 GB RAM</p> <p>R$.../hour</p> <p>R$.../month</p>
     const paragraphs = selectedCard
       ? Array.from(selectedCard.querySelectorAll('p')).map(p => p.textContent?.trim()).filter(Boolean)
       : [];
@@ -504,12 +504,12 @@ class MGCEquivalentCode {
       priceMonth
     };
     
-    console.log('[MGC Extension] Flavor capturado:', result);
+    console.log('[MGC Extension] Flavor captured:', result);
     return result;
   }
 
   /**
-   * Captura o tamanho de disco selecionado
+   * Captures the selected disk size
    * @returns {{label: string, sizeGb: number|null}|null}
    */
   captureDiskSize() {
@@ -519,54 +519,54 @@ class MGCEquivalentCode {
     const label = this.extractText(valueNode) || input?.value;
     
     if (!label) {
-      console.log('[MGC Extension] Disco: valor não encontrado');
+      console.log('[MGC Extension] Disk: value not found');
       return null;
     }
 
     const numericMatch = label.match(/(\d+)/);
     const sizeGb = numericMatch ? Number(numericMatch[1]) : null;
 
-    console.log('[MGC Extension] Disco capturado:', { label, sizeGb });
+    console.log('[MGC Extension] Disk captured:', { label, sizeGb });
     return { label, sizeGb };
   }
 
   /**
-   * Captura preferências de conectividade (IPv4 público)
+   * Captures connectivity preferences (public IPv4)
    * @returns {{publicIPv4: boolean}|null}
    */
   captureConnectivity() {
     const checkbox = this.findCheckboxByLabel('ipv4 público');
     if (!checkbox) {
-      console.log('[MGC Extension] Conectividade: checkbox não encontrado');
+      console.log('[MGC Extension] Connectivity: checkbox not found');
       return null;
     }
 
     const result = { publicIPv4: this.isElementChecked(checkbox) };
-    console.log('[MGC Extension] Conectividade capturada:', result);
+    console.log('[MGC Extension] Connectivity captured:', result);
     return result;
   }
 
   /**
-   * Captura estado do toggle de GPU
+   * Captures the GPU toggle state
    * @returns {boolean}
    */
   captureGpuState() {
     const checkbox = this.findCheckboxByLabel('habilitar gpu');
     const state = checkbox ? this.isElementChecked(checkbox) : false;
-    console.log('[MGC Extension] GPU capturado:', state);
+    console.log('[MGC Extension] GPU captured:', state);
     return state;
   }
 
   /**
-   * Captura a imagem selecionada
+   * Captures the selected image
    * @returns {object|null}
    */
   captureSelectedImage() {
     const section = this.findSectionByLabel('escolha uma imagem');
 
-    // Abordagem 1 (mais confiável): encontrar o card selecionado e ler seu input[name="image"]
-    // Cada card de imagem tem seu próprio input hidden. Os não-selecionados têm value="".
-    // Precisamos pegar especificamente o do card com data-checked="true".
+    // Approach 1 (most reliable): find the selected card and read its input[name="image"]
+    // Each image card has its own hidden input. Unselected ones have value="".
+    // We specifically need the one from the card with data-checked="true".
     const selectedCard = section?.querySelector('[data-checked="true"]')
       || section?.querySelector('label[data-checked]');
     
@@ -578,16 +578,16 @@ class MGCEquivalentCode {
         const providerName = hiddenInput.value.trim();
         console.log('[MGC Extension] Imagem via input[name=image]:', providerName);
 
-        // Buscar metadata pelo providerName
+        // Lookup metadata by providerName
         if (window.MGC_MAPPINGS?.getImageMetadata) {
           const metadata = window.MGC_MAPPINGS.getImageMetadata(providerName);
           if (metadata) {
-            console.log('[MGC Extension] Imagem capturada (com metadata):', metadata.displayName);
+            console.log('[MGC Extension] Image captured (with metadata):', metadata.displayName);
             return { ...metadata, sourceLabel: providerName, apiValue: metadata.name };
           }
         }
 
-        // Usar o providerName direto (válido para a API)
+        // Use providerName directly (valid for the API)
         return {
           displayName: providerName,
           name: providerName,
@@ -598,7 +598,7 @@ class MGCEquivalentCode {
       }
     }
 
-    // Abordagem 2 (fallback global): qualquer input[name="image"] com valor
+    // Approach 2 (global fallback): any input[name="image"] with a value
     const allImageInputs = (section || document).querySelectorAll('input[name="image"]');
     for (const inp of allImageInputs) {
       if (inp.value) {
@@ -612,7 +612,7 @@ class MGCEquivalentCode {
       }
     }
 
-    // Abordagem 3: ler a versão exibida no dropdown do card selecionado
+    // Approach 3: read the version displayed in the selected card's dropdown
     if (selectedCard) {
       const versionNode = selectedCard.querySelector('[class*="singleValue"]');
       const version = versionNode?.textContent?.trim() || null;
@@ -626,26 +626,26 @@ class MGCEquivalentCode {
       }
     }
 
-    console.log('[MGC Extension] Imagem: nenhuma imagem detectada');
+    console.log('[MGC Extension] Image: no image detected');
     return null;
   }
 
   /**
-   * Captura o nome da chave SSH selecionada
+   * Captures the selected SSH key name
    * @returns {string|null}
    */
   captureSSHKeyName() {
-    // 1) Modo "Inserir chave nova": input#key_name (presente quando o radio "insert" está ativo)
+    // 1) "Insert new key" mode: input#key_name (present when the "insert" radio is active)
     const keyNameInput = document.querySelector('input#key_name');
     if (keyNameInput?.value?.trim()) {
-      console.log('[MGC Extension] SSH key capturada (input#key_name):', keyNameInput.value);
+      console.log('[MGC Extension] SSH key captured (input#key_name):', keyNameInput.value);
       return keyNameInput.value.trim();
     }
 
-    // 2) Modo "Selecionar chave existente": encontrar o container da seção SSH inteira
-    //    O label "Chave SSH*" está dentro de um <div class="chakra-stack"> que é filho
-    //    do container da seção. Subimos na DOM até achar o container que também contém
-    //    o radiogroup (ou seja, a seção SSH completa).
+    // 2) "Select existing key" mode: find the container of the entire SSH section.
+    //    The "Chave SSH*" label is inside a <div class="chakra-stack"> which is a child
+    //    of the section container. We walk up the DOM to find the container that also
+    //    contains the radiogroup (i.e. the complete SSH section).
     const allLabels = Array.from(document.querySelectorAll('label'));
     const sshLabel = allLabels.find(l => {
       const text = this.normalizeText(l.textContent);
@@ -653,7 +653,7 @@ class MGCEquivalentCode {
     });
 
     if (sshLabel) {
-      // Subir na DOM até encontrar um container que contenha o radiogroup
+      // Walk up the DOM until finding a container that holds the radiogroup
       let container = sshLabel.parentElement;
       for (let i = 0; i < 6 && container; i++) {
         if (container.querySelector('[role="radiogroup"]')) break;
@@ -666,26 +666,26 @@ class MGCEquivalentCode {
         if (selectValue?.textContent?.trim()) {
           const name = selectValue.textContent.trim();
           if (name !== 'Selecione' && name !== 'Selecionar' && name.length > 0) {
-            console.log('[MGC Extension] SSH key capturada (dropdown):', name);
+            console.log('[MGC Extension] SSH key captured (dropdown):', name);
             return name;
           }
         }
 
-        // Fallback: native <select> dentro da seção SSH
+        // Fallback: native <select> inside the SSH section
         const nativeSelect = container.querySelector('select');
         if (nativeSelect?.value?.trim()) {
-          console.log('[MGC Extension] SSH key capturada (native select):', nativeSelect.value);
+          console.log('[MGC Extension] SSH key captured (native select):', nativeSelect.value);
           return nativeSelect.value.trim();
         }
       }
     }
 
-    console.log('[MGC Extension] SSH key: nenhuma chave selecionada');
+    console.log('[MGC Extension] SSH key: no key selected');
     return null;
   }
 
   /**
-   * Extrai texto normalizado de um nó
+   * Extracts normalized text from a node
    * @param {Element|null} node
    * @returns {string}
    */
@@ -696,7 +696,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Normaliza texto para comparações
+   * Normalizes text for comparisons
    * @param {string} value
    * @returns {string}
    */
@@ -712,7 +712,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Localiza seção/form-group pelo texto do label
+   * Locates a section/form-group by label text
    * @param {string} labelText
    * @returns {Element|null}
    */
@@ -720,7 +720,7 @@ class MGCEquivalentCode {
     const target = this.normalizeText(labelText);
     if (!target) return null;
 
-    // Buscar em todos os labels primeiro
+    // Search all labels first
     const allLabels = Array.from(document.querySelectorAll('label'));
     let matchLabel = allLabels.find((label) => this.normalizeText(label.textContent).includes(target));
     
@@ -729,26 +729,26 @@ class MGCEquivalentCode {
         matchLabel.closest('.chakra-form-control') ||
         matchLabel.closest('fieldset') ||
         matchLabel.parentElement;
-      console.log('[MGC Extension] Seção encontrada via label para:', labelText);
+      console.log('[MGC Extension] Section found via label for:', labelText);
       return container;
     }
 
-    // Fallback: buscar em headers e outros elementos
+    // Fallback: search in headers and other elements
     const candidates = Array.from(document.querySelectorAll('h2, h3, h4, legend, p, span, strong'));
     const match = candidates.find((el) => this.normalizeText(el.textContent).includes(target));
 
     if (!match) {
-      console.log('[MGC Extension] Seção NÃO encontrada para:', labelText);
+      console.log('[MGC Extension] Section NOT found for:', labelText);
       return null;
     }
 
     const container = match.closest('[role="group"], section, fieldset, form, .chakra-form-control') || match.parentElement;
-    console.log('[MGC Extension] Seção encontrada via elemento para:', labelText);
+    console.log('[MGC Extension] Section found via element for:', labelText);
     return container;
   }
 
   /**
-   * Encontra label associado a um input
+   * Finds the label associated with an input
    * @param {Element} input
    * @returns {Element|null}
    */
@@ -762,7 +762,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Localiza checkbox pelo texto do label
+   * Locates a checkbox by its label text
    * @param {string} labelText
    * @returns {HTMLInputElement|null}
    */
@@ -784,7 +784,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Verifica estado de um checkbox/input
+   * Checks the state of a checkbox/input
    * @param {HTMLInputElement} input
    * @returns {boolean}
    */
@@ -796,7 +796,7 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Extrai detalhes numéricos do flavor
+   * Extracts numeric flavor details
    * @param {string} text
    * @returns {{sku: string|null, vcpu: number|null, ramGb: number|null, priceHour: string|null, priceMonth: string|null}}
    */
@@ -805,7 +805,7 @@ class MGCEquivalentCode {
       return { sku: null, vcpu: null, ramGb: null, priceHour: null, priceMonth: null };
     }
 
-    // SKU format: XX{digits}-{digits}-{digits} (ex: BV4-8-100, BV1-1-40)
+    // SKU format: XX{digits}-{digits}-{digits} (e.g. BV4-8-100, BV1-1-40)
     // Use word boundary \b to avoid grabbing concatenated text like "BV4-8-1004 vCPU"
     const skuMatch = text.match(/\b([A-Z]{2}\d+-\d+-\d+)\b/i);
     
@@ -828,20 +828,20 @@ class MGCEquivalentCode {
   }
 
   /**
-   * Atualiza o display do código
+   * Updates the code display
    */
   updateCodeDisplay() {
     if (!this.sidebar) return;
 
-    console.log('[MGC Extension] Atualizando display do código');
+    console.log('[MGC Extension] Updating code display');
 
     const codeElement = this.sidebar.querySelector('#mgc-code-output');
     const billingElement = this.sidebar.querySelector('#mgc-billing-info');
     
-    // Preparar dados para geração
+    // Prepare data for generation
     const data = { ...this.formData };
 
-    // Gerar código baseado na tab ativa
+    // Generate code based on the active tab
     let result = null;
     
     if (window.MGC_GENERATORS) {
@@ -851,12 +851,12 @@ class MGCEquivalentCode {
         result = window.MGC_GENERATORS.generateTerraform(data);
       }
     } else {
-      console.error('[MGC Extension] MGC_GENERATORS não disponível');
-      codeElement.textContent = '// Erro: Geradores não carregados';
+      console.error('[MGC Extension] MGC_GENERATORS not available');
+      codeElement.textContent = '// Error: generators not loaded';
       return;
     }
 
-    // Atualizar código com syntax highlighting
+    // Update code with syntax highlighting
     if (window.MGC_GENERATORS?.formatCodeWithHighlight) {
       codeElement.innerHTML = window.MGC_GENERATORS.formatCodeWithHighlight(
         result.code, this.currentTab
@@ -865,7 +865,7 @@ class MGCEquivalentCode {
       codeElement.textContent = result.code;
     }
     
-    // Exibir billing se existir
+    // Show billing info if available
     if (billingElement && result.billing) {
       billingElement.textContent = result.billing;
       billingElement.style.display = 'block';
@@ -875,7 +875,7 @@ class MGCEquivalentCode {
   }
 }
 
-// Inicializar quando o DOM estiver pronto
+// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     new MGCEquivalentCode();
@@ -884,4 +884,4 @@ if (document.readyState === 'loading') {
   new MGCEquivalentCode();
 }
 
-console.log('[MGC Extension] Content script carregado');
+console.log('[MGC Extension] Content script loaded');

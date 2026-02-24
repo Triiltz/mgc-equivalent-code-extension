@@ -1,15 +1,15 @@
 /**
- * Geradores de código CLI e Terraform
- * Gera código equivalente a partir dos dados capturados do formulário
+ * CLI and Terraform code generators
+ * Generates equivalent code from captured form data
  *
- * Referências:
+ * References:
  *   CLI:       mgc virtual-machine instances create --help
  *   Terraform: registry.terraform.io/providers/MagaluCloud/mgc/latest/docs/resources/virtual_machine_instances
  */
 
 /**
- * Resolve o melhor valor de imagem para uso em código.
- * Prioridade: providerName (name) > displayName > fallback
+ * Resolves the best image value for use in code.
+ * Priority: providerName (name) > displayName > fallback
  * @param {Object|null} image
  * @returns {{imageName: string|null, imageId: string|null}}
  */
@@ -22,8 +22,8 @@ function resolveImage(image) {
 }
 
 /**
- * Resolve o melhor valor de machine-type.
- * Prefere o nome SKU (ex: "BV4-8-100") ao UUID.
+ * Resolves the best machine-type value.
+ * Prefers the SKU name (e.g. "BV4-8-100") over the UUID.
  * @param {Object|null} flavor
  * @returns {{mtName: string|null, mtId: string|null}}
  */
@@ -36,8 +36,8 @@ function resolveMachineType(flavor) {
 }
 
 /**
- * Gera comando CLI do MGC
- * @param {Object} data - Dados capturados do formulário
+ * Generates the MGC CLI command
+ * @param {Object} data - Form data captured from the UI
  * @returns {{code: string, billing: string|null}}
  */
 function generateCLI(data = {}) {
@@ -118,14 +118,14 @@ function generateCLI(data = {}) {
 }
 
 /**
- * Gera código Terraform
+ * Generates Terraform code
  * Ref: registry.terraform.io/providers/MagaluCloud/mgc/latest/docs/resources/virtual_machine_instances
  *
  * Required: name, machine_type
  * Optional: image, availability_zone, ssh_key_name, allocate_public_ipv4,
  *           user_data, vpc_id, network_interface_id, creation_security_groups
  *
- * @param {Object} data - Dados capturados do formulário
+ * @param {Object} data - Form data captured from the UI
  * @returns {{code: string, billing: string|null}}
  */
 function generateTerraform(data = {}) {
@@ -215,30 +215,30 @@ function generateTerraform(data = {}) {
 }
 
 /**
- * Formata código com syntax highlighting básico usando HTML
- * @param {string} code - Código fonte
- * @param {string} language - Linguagem (cli ou terraform)
- * @returns {string} - Código formatado
+ * Formats code with basic syntax highlighting using HTML
+ * @param {string} code - Source code
+ * @param {string} language - Language (cli or terraform)
+ * @returns {string} - Formatted code
  */
 function formatCodeWithHighlight(code, language) {
   if (!code) return '';
 
-  // Escapar HTML
+  // Escape HTML
   let escaped = code
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Estratégia: extrair strings "..." para placeholders ANTES de inserir spans,
-  // assim o regex de strings nunca casa com atributos class="..." do HTML gerado.
+  // Strategy: extract "..." strings to placeholders BEFORE inserting spans,
+  // so the string regex never matches class="..." attributes of the generated HTML.
 
   if (language === 'cli') {
     escaped = escaped.split('\n').map(line => {
-      // Comentários — linha inteira
+      // Comments — entire line
       if (line.trimStart().startsWith('#')) {
         return `<span class="comment">${line}</span>`;
       }
-      // 1) Extrair strings para placeholders
+      // 1) Extract strings to placeholders
       const strings = [];
       let processed = line.replace(/"([^"]*)"/g, (match) => {
         strings.push(`<span class="string">${match}</span>`);
@@ -246,9 +246,9 @@ function formatCodeWithHighlight(code, language) {
       });
       // 2) Flags (--flag.name, --flag-name)
       processed = processed.replace(/--([a-z][a-z0-9._-]*)/gi, '<span class="flag">--$1</span>');
-      // 3) Booleans soltos (true/false)
+      // 3) Loose booleans (true/false)
       processed = processed.replace(/\b(true|false)\b/g, '<span class="keyword">$1</span>');
-      // 4) Restaurar strings
+      // 4) Restore strings
       processed = processed.replace(/\x00S(\d+)\x00/g, (_, i) => strings[i]);
       return processed;
     }).join('\n');
@@ -256,24 +256,24 @@ function formatCodeWithHighlight(code, language) {
 
   if (language === 'terraform') {
     escaped = escaped.split('\n').map(line => {
-      // Comentários — linha inteira
+      // Comments — entire line
       if (line.trimStart().startsWith('#')) {
         return `<span class="comment">${line}</span>`;
       }
-      // 1) Extrair strings para placeholders
+      // 1) Extract strings to placeholders
       const strings = [];
       let processed = line.replace(/"([^"]*)"/g, (match) => {
         strings.push(`<span class="string">${match}</span>`);
         return `\x00S${strings.length - 1}\x00`;
       });
-      // 2) Properties (key = ...) — ANTES de keywords para não casar class= dos spans
+      // 2) Properties (key = ...) — BEFORE keywords to avoid matching class= attributes of spans
       processed = processed.replace(/\b([a-z_][a-z0-9_]*)\s*=/g, '<span class="property">$1</span> =');
       // 3) Keywords HCL
       processed = processed.replace(/\b(resource|provider|variable|output|module|data|locals|terraform)\b/g,
         '<span class="keyword">$1</span>');
       // 4) Booleans
       processed = processed.replace(/\b(true|false)\b/g, '<span class="keyword">$1</span>');
-      // 5) Restaurar strings
+      // 5) Restore strings
       processed = processed.replace(/\x00S(\d+)\x00/g, (_, i) => strings[i]);
       return processed;
     }).join('\n');
@@ -282,11 +282,11 @@ function formatCodeWithHighlight(code, language) {
   return escaped;
 }
 
-// Exportar para uso no content script
+// Export for use in content script
 window.MGC_GENERATORS = {
   generateCLI,
   generateTerraform,
   formatCodeWithHighlight
 };
 
-console.log('[MGC Extension] Geradores carregados');
+console.log('[MGC Extension] Generators loaded');
