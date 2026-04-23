@@ -1,3 +1,5 @@
+# **Not working due to current MGC VM creation page update*
+
 # MGC Equivalent Code
 
 > Generate equivalent CLI and Terraform code directly from the [Magalu Cloud](https://console.magalu.cloud) console — inspired by Google Cloud's "Equivalent Code" feature.
